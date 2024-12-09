@@ -34,3 +34,41 @@ def BuildBinomialTree(Spot, r, vol, TTM, steps, ind, ax):
   
 
   return tree, probs, bars, dots
+
+
+
+def BinomialTreePricing(Spot, r, q, vol, TTM, steps, payoff, is_american = False):
+
+    tree = list()
+    price = list()
+
+    delta_t = TTM / steps
+
+    tree.append(np.array([Spot]))
+    price.append(np.array([0.0]))
+
+    pu = (np.exp((r-q)*delta_t)-np.exp(-np.sqrt(delta_t)*vol)) / (np.exp(np.sqrt(delta_t)*vol) - np.exp(-np.sqrt(delta_t)*vol))
+
+    for i in range(steps):
+
+        tree.append(np.zeros(i+2))
+        price.append(np.zeros(i+2))
+        
+
+
+        tree[i+1][0:-1] = tree[i] * np.exp(np.sqrt(delta_t)*vol)
+
+        tree[i+1][-1] = tree[i][-1] * np.exp(-np.sqrt(delta_t)*vol)
+
+
+    price[-1] = payoff(tree[-1])
+
+    for i in range(steps-1, -1, -1):
+        
+        price[i] = np.exp(-r*delta_t) * (pu * price[i+1][0:-1] + (1-pu) * price[i+1][1:])
+
+        if is_american:
+            price[i] = np.maximum(price[i], payoff(tree[i]))
+        
+    return price[0][0]
+
